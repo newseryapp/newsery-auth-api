@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String?      // ← BU SATIR EKLENDİ
+  provider     AuthProvider @default(LOCAL)
+  createdAt    DateTime @default(now())
+
+  entitlement Entitlement?
+
+  @@index([email])
+}
+
+model Entitlement {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  status       EntitlementStatus @default(TRIALING)
+  trialStartAt DateTime
+  trialEndAt   DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Stripe (ileride)
+  stripeCustomerId     String? 
+  stripeSubscriptionId String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum EntitlementStatus {
+  TRIALING
+  ACTIVE
+  EXPIRED
+  CANCELED
+}
